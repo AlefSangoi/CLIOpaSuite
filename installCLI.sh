@@ -64,37 +64,15 @@ instalar_opasuite_com_credenciais() {
 
 # Função para configurar a pasta SIP
 configurar_pasta_sip() {
-  echo "Configurando a pasta SIP..."
+  echo "Renomeando o arquivo sip.conf para Oldsip.conf..."
+  if [ -f /etc/asterisk/sip.conf ]; then
+    mv /etc/asterisk/sip.conf /etc/asterisk/Oldsip.conf
+    echo "Arquivo sip.conf renomeado para Oldsip.conf."
+  fi
 
-  # Criação das pastas
-  mkdir -p /etc/asterisk/sip/peers
-  mkdir -p /etc/asterisk/sip/register
-  mkdir -p /etc/asterisk/sip/trunk
+  echo "Criando um novo arquivo sip.conf..."
 
-  # Criação dos arquivos com conteúdo especificado
-  echo '<?php 
- header ( "HTTP/1.0 404 Not Found" ); 
- ?>' > /etc/asterisk/sip/index.php
-
-  # Criar arquivos na pasta peers
-  echo '<?php 
- header ( "HTTP/1.0 404 Not Found" ); 
- ?>' > /etc/asterisk/sip/peers/index.php
-  touch /etc/asterisk/sip/peers/opasuite.conf
-
-  # Criar arquivos na pasta register
-  echo '<?php 
- header ( "HTTP/1.0 404 Not Found" ); 
- ?>' > /etc/asterisk/sip/register/index.php
-  touch /etc/asterisk/sip/register/register.conf
-
-  # Criar arquivos na pasta trunk
-  echo '<?php 
- header ( "HTTP/1.0 404 Not Found" ); 
- ?>' > /etc/asterisk/sip/trunk/index.php
-  touch /etc/asterisk/sip/trunk/trunk.conf
-
-  # Criação do arquivo sip.conf
+  # Criação do arquivo sip.conf com o conteúdo atualizado
   cat <<EOL > /etc/asterisk/sip.conf
 [codec](!)
 disallow     = all
@@ -202,7 +180,7 @@ callcounter = yes
 #include "sip/trunk/*.conf"
 EOL
 
-  echo "Configuração da pasta SIP concluída com sucesso!"
+  echo "Novo arquivo sip.conf criado com sucesso!"
 }
 
 # Função para listar os usuários com acesso root
@@ -219,11 +197,8 @@ inativar_usuario() {
     if id "$usuario" &>/dev/null; then
         echo "Inativando o acesso root do usuário: $usuario"
 
-        # Remover o usuário do arquivo sudoers, se estiver
-        sed -i "/^$usuario/d" /etc/sudoers
-
-        # Bloquear a conta do usuário
-        passwd -l "$usuario"
+        # Desativar o login root com usermod -L
+        usermod -L "$usuario"
 
         echo "Acesso root inativado para o usuário: $usuario"
     else
@@ -267,18 +242,11 @@ fi
 # Listar usuários com acesso root
 listar_usuarios_root
 
-# Perguntar se deseja inativar algum usuário
-read -p "Deseja inativar o acesso root de algum usuário? (1 para Sim / 2 para Não): " opcao_inativar_usuario
-if [ "$opcao_inativar_usuario" -eq 1 ]; then
-  read -p "Digite o nome do usuário que deseja inativar: " usuario_inativar
-  inativar_usuario "$usuario_inativar"
-fi
+# Perguntar qual usuário inativar no acesso root
+read -p "Digite o nome do usuário que deseja inativar o acesso root: " usuario_inativar
+inativar_usuario "$usuario_inativar"
 
 # Reiniciar o serviço SSH
-read -p "Deseja reiniciar o serviço SSH? (1 para Sim / 2 para Não): " opcao_reiniciar_ssh
-if [ "$opcao_reiniciar_ssh" -eq 1 ]; then
-  reiniciar_ssh
-fi
+reiniciar_ssh
 
-# Finalização
-echo "Script concluído com sucesso!"
+echo "===== Script Finalizado ====="
