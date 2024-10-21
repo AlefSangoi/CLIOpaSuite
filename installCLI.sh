@@ -189,23 +189,45 @@ listar_usuarios_root() {
     awk -F: '($3 == 0) {print $1}' /etc/passwd
 }
 
-# Função para inativar o acesso root de um usuário
+# Função para listar os usuários que podem fazer login no sistema
+listar_usuarios_com_login() {
+    echo "===== Usuários com permissão para login ====="
+    awk -F: '$7 ~ /(bash|sh)/ {print $1}' /etc/passwd
+    echo "============================================="
+}
+
+# Função para inativar o acesso de um usuário
 inativar_usuario() {
     local usuario=$1
 
     # Verificar se o usuário existe
     if id "$usuario" &>/dev/null; then
-        echo "Inativando o acesso root do usuário: $usuario"
+        echo "Inativando o usuário: $usuario"
 
-        # Desativar o login root com usermod -L
+        # Desativar o usuário
         usermod -L "$usuario"
 
-        echo "Acesso root inativado para o usuário: $usuario"
+        echo "Usuário $usuario foi inativado."
     else
         echo "Usuário $usuario não encontrado!"
         exit 1
     fi
 }
+
+# Execução do script
+clear
+echo "===== Verificação de Usuários ====="
+
+# Listar os usuários com permissão para login
+listar_usuarios_com_login
+
+# Perguntar qual usuário deseja inativar
+read -p "Digite o nome do usuário que deseja inativar: " usuario_inativar
+
+# Inativar o usuário
+inativar_usuario "$usuario_inativar"
+
+echo "Script concluído com sucesso!"
 
 # Função para reiniciar o serviço SSH
 reiniciar_ssh() {
